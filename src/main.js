@@ -921,13 +921,19 @@ function hydrateDisplayBook(book) {
 }
 
 function renderProfilePage() {
+  const profileName = userDisplayName();
+  const profileAvatar = userAvatarUrl();
+  const profileBio = state.authUser
+    ? "Your synced Pockland reading corner."
+    : "Loves small-town stories, bookshop atmosphere, and accidental literary discoveries.";
+
   return `
     <section class="card profile-card">
       <div class="profile-avatar">
-        <img src="/avatars/you.jpg" alt="Your profile photo" loading="lazy">
+        <img src="${escapeHtml(profileAvatar)}" alt="${escapeHtml(profileName)} profile photo" loading="lazy">
       </div>
-      <h2>Bookish Human</h2>
-      <p>Loves small-town stories, bookshop atmosphere, and accidental literary discoveries.</p>
+      <h2>${escapeHtml(profileName)}</h2>
+      <p>${escapeHtml(profileBio)}</p>
       <div class="theme-switch" role="group" aria-label="Theme">
         <button class="${state.theme === "autumn" ? "active" : ""}" data-theme="autumn">Autumn</button>
         <button class="${state.theme === "summer" ? "active" : ""}" data-theme="summer">Summer</button>
@@ -937,6 +943,21 @@ function renderProfilePage() {
 
     ${renderReadingCalendar()}
   `;
+}
+
+function userDisplayName() {
+  if (!state.authUser) return "Bookish Human";
+  return state.authUser.user_metadata?.full_name
+    || state.authUser.user_metadata?.name
+    || state.authUser.email
+    || "Signed in";
+}
+
+function userAvatarUrl() {
+  if (!state.authUser) return "/avatars/you.jpg";
+  return state.authUser.user_metadata?.avatar_url
+    || state.authUser.user_metadata?.picture
+    || "/avatars/you.jpg";
 }
 
 function renderAuthPanel() {
@@ -968,7 +989,7 @@ function renderAuthPanel() {
     `;
   }
 
-  const name = state.authUser.user_metadata?.full_name || state.authUser.email || "Signed in";
+  const name = userDisplayName();
   return `
     <div class="auth-panel">
       <span>${escapeHtml(name)}</span>
@@ -3416,10 +3437,10 @@ function bindEvents() {
       const addPost = (photoUrl) => {
         const post = {
           id,
-          user: state.authUser?.user_metadata?.full_name || "You",
+          user: state.authUser ? userDisplayName() : "You",
           handle: state.authUser?.email ? `@${state.authUser.email.split("@")[0]}` : "@my.pockland",
           avatar: "Y",
-          avatarImage: state.authUser?.user_metadata?.avatar_url || "/avatars/you.jpg",
+          avatarImage: userAvatarUrl(),
           mood: "just now",
           image: selectedBook.title === "Frankenstein"
             ? "linear-gradient(135deg, #dff5ff 0%, #94c86c 46%, #ffe27a 100%)"

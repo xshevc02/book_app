@@ -1,4 +1,4 @@
-const CACHE_NAME = "pockland-v145";
+const CACHE_NAME = "pockland-v146";
 const ASSETS = [
   "/",
   "/index.html",
