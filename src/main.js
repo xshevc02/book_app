@@ -909,7 +909,10 @@ function icon(name) {
 }
 
 function render(options = {}) {
-  persistLocalData();
+  if (options.persist !== false) {
+    persistLocalData();
+  }
+  const focusTarget = options.focus ?? captureInputFocus();
   const previousScroll = options.scrollTop ?? state.contentScrollTop ?? document.querySelector(".content")?.scrollTop ?? 0;
   app.innerHTML = `
     <main class="phone-shell ios" data-app-theme="${state.theme}">
@@ -924,16 +927,61 @@ function render(options = {}) {
   `;
   bindEvents();
   requestAnimationFrame(syncPostMoreControls);
-  if (options.preserveScroll) {
-    requestAnimationFrame(() => {
+  requestAnimationFrame(() => {
+    if (options.preserveScroll) {
       const content = document.querySelector(".content");
       if (content) {
         content.scrollTop = previousScroll;
         state.contentScrollTop = content.scrollTop;
       }
-    });
-  } else {
-    state.contentScrollTop = 0;
+    } else {
+      state.contentScrollTop = 0;
+    }
+    restoreInputFocus(focusTarget);
+  });
+}
+
+function captureInputFocus() {
+  const active = document.activeElement;
+  if (!active || !["INPUT", "TEXTAREA"].includes(active.tagName)) return null;
+
+  const selector = [
+    "data-add-book-search",
+    "data-compose-book",
+    "data-feed-search",
+    "data-manual-title",
+    "data-manual-author",
+    "data-manual-isbn"
+  ].find((attribute) => active.hasAttribute(attribute));
+
+  if (!selector) return null;
+
+  return {
+    selector: `[${selector}]`,
+    start: active.selectionStart,
+    end: active.selectionEnd
+  };
+}
+
+function restoreInputFocus(target) {
+  if (!target) return;
+
+  const focusTarget = typeof target === "string" ? { selector: target } : target;
+  if (!focusTarget.selector) return;
+
+  const input = document.querySelector(focusTarget.selector);
+  if (!input || !["INPUT", "TEXTAREA"].includes(input.tagName)) return;
+
+  try {
+    input.focus({ preventScroll: true });
+  } catch {
+    input.focus();
+  }
+
+  if (typeof input.setSelectionRange === "function") {
+    const start = focusTarget.start ?? input.value.length;
+    const end = focusTarget.end ?? start;
+    input.setSelectionRange(start, end);
   }
 }
 
@@ -2092,14 +2140,12 @@ async function searchOpenLibrary(query, requestId) {
 
     state.remoteBookResults = results;
     state.remoteBookStatus = "done";
-    render({ preserveScroll: true });
-    restoreAddBookSearchFocus();
+    render({ preserveScroll: true, persist: false, focus: "[data-add-book-search]" });
   } catch {
     if (requestId !== addBookRequestId) return;
     state.remoteBookResults = [];
     state.remoteBookStatus = "error";
-    render({ preserveScroll: true });
-    restoreAddBookSearchFocus();
+    render({ preserveScroll: true, persist: false, focus: "[data-add-book-search]" });
   }
 }
 
@@ -2135,14 +2181,12 @@ function queueComposeBookSearch(query) {
       if (requestId !== composeBookRequestId || state.composeBookQuery.trim() !== value) return;
       state.composeBookResults = results;
       state.composeBookStatus = "done";
-      render({ preserveScroll: true });
-      restoreComposeBookFocus();
+      render({ preserveScroll: true, persist: false, focus: "[data-compose-book]" });
     } catch {
       if (requestId !== composeBookRequestId) return;
       state.composeBookResults = [];
       state.composeBookStatus = "error";
-      render({ preserveScroll: true });
-      restoreComposeBookFocus();
+      render({ preserveScroll: true, persist: false, focus: "[data-compose-book]" });
     }
   }, 450);
 }
@@ -2370,23 +2414,11 @@ function normalizeForMatch(value) {
 }
 
 function restoreAddBookSearchFocus() {
-  requestAnimationFrame(() => {
-    const nextInput = document.querySelector("[data-add-book-search]");
-    if (nextInput) {
-      nextInput.focus();
-      nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
-    }
-  });
+  restoreInputFocus("[data-add-book-search]");
 }
 
 function restoreComposeBookFocus() {
-  requestAnimationFrame(() => {
-    const input = document.querySelector("[data-compose-book]");
-    if (input) {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
-  });
+  restoreInputFocus("[data-compose-book]");
 }
 
 function filteredPosts() {
@@ -3477,8 +3509,15 @@ function bindEvents() {
       if (!state.addBookQuery.trim()) {
         state.manualBookPage = false;
       }
-      render({ preserveScroll: true });
-      restoreAddBookSearchFocus();
+      render({
+        preserveScroll: true,
+        persist: false,
+        focus: {
+          selector: "[data-add-book-search]",
+          start: input.selectionStart,
+          end: input.selectionEnd
+        }
+      });
     });
   });
 
@@ -3622,7 +3661,7 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.feedQuery = "";
       state.feedSearchText = "";
-      render({ preserveScroll: true });
+      render({ preserveScroll: true, persist: false });
     });
   });
 
@@ -3632,12 +3671,13 @@ function bindEvents() {
       if (!input.value.trim()) {
         state.feedQuery = "";
       }
-      render({ preserveScroll: true });
-      requestAnimationFrame(() => {
-        const nextInput = document.querySelector("[data-feed-search]");
-        if (nextInput) {
-          nextInput.focus();
-          nextInput.setSelectionRange(nextInput.value.length, nextInput.value.length);
+      render({
+        preserveScroll: true,
+        persist: false,
+        focus: {
+          selector: "[data-feed-search]",
+          start: input.selectionStart,
+          end: input.selectionEnd
         }
       });
     });
@@ -3651,7 +3691,7 @@ function bindEvents() {
       if (match) {
         state.feedQuery = match;
         state.feedSearchText = match;
-        render({ preserveScroll: true });
+        render({ preserveScroll: true, persist: false, focus: "[data-feed-search]" });
       }
     });
   });
@@ -3664,8 +3704,15 @@ function bindEvents() {
       const preview = document.querySelector(".compose-preview img");
       const matchedBook = composeSelectedBook() || books[0];
       if (preview) preview.src = matchedBook.cover;
-      render({ preserveScroll: true });
-      restoreComposeBookFocus();
+      render({
+        preserveScroll: true,
+        persist: false,
+        focus: {
+          selector: "[data-compose-book]",
+          start: input.selectionStart,
+          end: input.selectionEnd
+        }
+      });
     });
   });
 
