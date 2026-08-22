@@ -50,6 +50,7 @@ const state = {
   authStatus: isSupabaseConfigured ? "loading" : "local",
   authUser: null,
   syncStatus: "local",
+  cloudStateReady: false,
   currentReadingIndex: 0,
   shelfMode: "reading",
   currentShelf: "all",
@@ -733,7 +734,7 @@ function applyUserStatePayload(payload) {
 }
 
 function scheduleRemoteSync() {
-  if (!state.authUser || !isSupabaseConfigured) return;
+  if (!state.authUser || !isSupabaseConfigured || !state.cloudStateReady) return;
   window.clearTimeout(remoteSyncTimer);
   state.syncStatus = "saving";
   remoteSyncTimer = window.setTimeout(async () => {
@@ -798,12 +799,15 @@ async function applySession(session, options = {}) {
   state.authStatus = state.authUser ? "signed-in" : "signed-out";
 
   if (!state.authUser) {
+    state.cloudStateReady = false;
     state.remotePosts = [];
     state.syncStatus = "local";
     render({ preserveScroll: true });
     return;
   }
 
+  state.cloudStateReady = false;
+  window.clearTimeout(remoteSyncTimer);
   state.syncStatus = "loading";
   render({ preserveScroll: true });
 
@@ -816,10 +820,12 @@ async function applySession(session, options = {}) {
       await migrateLocalPostsToPublicFeed();
     }
     state.remotePosts = await loadPublicPosts();
+    state.cloudStateReady = true;
     state.syncStatus = "synced";
     persistLocalData({ remote: false });
     render({ preserveScroll: true });
   } catch {
+    state.cloudStateReady = false;
     state.syncStatus = "error";
     render({ preserveScroll: true });
   }
