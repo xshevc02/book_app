@@ -13,6 +13,13 @@
     <script>
       (() => {
         const purgeKey = "pockland-pwa-purge-v3";
+        if (new URLSearchParams(window.location.search).has("resetLocal")) {
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch {}
+        }
+
         const cacheNameLooksOurs = (key) =>
           /pockland|book[_-]?app|workbox|precache|vite/i.test(key);
 

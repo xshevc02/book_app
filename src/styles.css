@@ -3276,6 +3276,22 @@ h3 {
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .phone-shell {
+    padding: 0;
+  }
+
+  .app-screen {
+    width: 100%;
+    max-width: none;
+    min-height: 100dvh;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
 @media (min-width: 900px) {
   html,
   body {

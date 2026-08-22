@@ -72,6 +72,10 @@
             sessionStorage.clear();
           } catch {}
 
+          try {
+            localStorage.clear();
+          } catch {}
+
           status.textContent = "Done. Opening the fresh app...";
           window.setTimeout(() => window.location.replace(appUrl.toString()), 500);
         } catch {
