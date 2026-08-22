@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title>Pockland cache reset</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f6f1e4;
+        color: #231913;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(420px, 100%);
+        padding: 24px;
+        border: 1px solid rgba(87, 63, 41, 0.18);
+        border-radius: 24px;
+        background: rgba(255, 252, 238, 0.9);
+        box-shadow: 0 24px 70px rgba(38, 30, 22, 0.16);
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.35rem;
+      }
+
+      p {
+        margin: 0;
+        color: #6d6357;
+        line-height: 1.5;
+      }
+
+      a {
+        color: #6f8c39;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Cleaning Pockland cache</h1>
+      <p id="status">Removing old app cache and service workers...</p>
+    </main>
+    <script>
+      (async () => {
+        const status = document.getElementById("status");
+        const appUrl = new URL("./", window.location.href);
+        appUrl.searchParams.set("fresh", Date.now().toString());
+
+        try {
+          if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+          }
+
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((key) => caches.delete(key)));
+          }
+
+          try {
+            sessionStorage.clear();
+          } catch {}
+
+          status.textContent = "Done. Opening the fresh app...";
+          window.setTimeout(() => window.location.replace(appUrl.toString()), 500);
+        } catch {
+          status.innerHTML = `Cache cleanup needs a manual refresh. <a href="${appUrl.toString()}">Open Pockland</a>`;
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1882,12 +1882,13 @@ function formatDateLabel(iso) {
 
 function inferStartedAt(book) {
   if (book.status === "Reading" && bookProgress(book) > 0) return todayIso();
-  if (book.status === "Finished") return book.startedAt || book.finishedAt || todayIso();
+  if (book.status === "Finished") return book.startedAt || book.finishedAt || "";
   return "";
 }
 
 function inferFinishedAt(book) {
-  return book.status === "Finished" ? book.finishedAt || todayIso() : "";
+  if (book.finishedAtUnknown) return "";
+  return book.status === "Finished" ? book.finishedAt || "" : "";
 }
 
 function durationParts(minutes) {
