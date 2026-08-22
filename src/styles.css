@@ -42,6 +42,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.7), transparent 24rem),
     linear-gradient(135deg, #e4e1db 0%, #c9c4bb 100%);
@@ -288,6 +289,7 @@ h3 {
   position: relative;
   z-index: 1;
   flex: 1;
+  min-height: 0;
   min-width: 0;
   max-width: 100%;
   overflow-y: auto;
@@ -3264,11 +3266,16 @@ h3 {
 
   .app-screen {
     width: 100%;
-    height: 100vh;
-    min-height: 100vh;
+    max-width: none;
+    height: var(--app-height, 100dvh);
+    min-height: 0;
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .content {
+    min-height: 0;
   }
 
   .topbar {
@@ -3284,11 +3291,15 @@ h3 {
   .app-screen {
     width: 100%;
     max-width: none;
-    min-height: 100dvh;
-    height: 100dvh;
+    min-height: 0;
+    height: var(--app-height, 100dvh);
     border: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .content {
+    min-height: 0;
   }
 }
 

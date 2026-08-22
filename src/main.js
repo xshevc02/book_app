@@ -872,6 +872,19 @@ const navItems = [
 
 const app = document.querySelector("#app");
 
+function setAppViewportHeight() {
+  const viewportHeight = window.visualViewport?.height || window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${viewportHeight}px`);
+}
+
+setAppViewportHeight();
+window.visualViewport?.addEventListener("resize", setAppViewportHeight);
+window.visualViewport?.addEventListener("scroll", setAppViewportHeight);
+window.addEventListener("resize", setAppViewportHeight);
+window.addEventListener("orientationchange", () => {
+  window.setTimeout(setAppViewportHeight, 120);
+});
+
 function icon(name) {
   const icons = {
     home: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.8 11.2 12 4l8.2 7.2"/><path d="M5.8 10.4V20h12.4v-9.6"/><path d="M9.3 20v-5.7h5.4V20"/><path d="M15.3 5.8h2.8v3.7"/><path d="M8.2 12.4h2.3v2.3H8.2z"/><path d="M13.5 12.4h2.3v2.3h-2.3z"/></svg>`,
