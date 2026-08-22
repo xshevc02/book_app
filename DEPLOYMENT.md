@@ -29,3 +29,30 @@ Without these values, the app keeps working in local demo mode.
 
 User shelves, progress, ratings, and custom shelves are private per Google account.
 Feed posts are public for everyone for now.
+
+## GitHub Pages
+
+This repository also has a GitHub Actions workflow for Pages.
+
+1. Open GitHub repository settings.
+2. Go to Pages.
+3. Set Source to GitHub Actions.
+4. Push to `master`; the workflow deploys `dist`.
+
+Production URL:
+
+```text
+https://xshevc02.github.io/book_app/
+```
+
+Add this URL in Supabase Authentication > URL Configuration > Redirect URLs:
+
+```text
+https://xshevc02.github.io/book_app/
+```
+
+In Google Cloud OAuth Client, add this JavaScript origin:
+
+```text
+https://xshevc02.github.io
+```

@@ -14,7 +14,12 @@ import {
   signOut
 } from "./supabaseClient.js";
 
+const APP_BASE = import.meta.env.BASE_URL || "/";
 const STORAGE_KEY = "book-nook-local-db-v1";
+
+function assetUrl(path) {
+  return `${APP_BASE}${path.replace(/^\/+/, "")}`;
+}
 
 const state = {
   tab: "home",
@@ -66,7 +71,7 @@ let books = [
   {
     title: "Pride and Prejudice",
     author: "Jane Austen",
-    cover: "/covers/pride-and-prejudice.jpg",
+    cover: assetUrl("covers/pride-and-prejudice.jpg"),
     isbn: "9780141439518",
     status: "Reading",
     totalPages: 432,
@@ -78,7 +83,7 @@ let books = [
   {
     title: "Frankenstein",
     author: "Mary Shelley",
-    cover: "/covers/frankenstein.jpg",
+    cover: assetUrl("covers/frankenstein.jpg"),
     isbn: "9780141439471",
     status: "Wishlist",
     totalPages: 280,
@@ -90,7 +95,7 @@ let books = [
   {
     title: "Little Women",
     author: "Louisa May Alcott",
-    cover: "/covers/little-women.jpg",
+    cover: assetUrl("covers/little-women.jpg"),
     isbn: "9780147514011",
     status: "Finished",
     totalPages: 759,
@@ -104,7 +109,7 @@ let books = [
   {
     title: "Jane Eyre",
     author: "Charlotte Bronte",
-    cover: "/covers/jane-eyre.jpg",
+    cover: assetUrl("covers/jane-eyre.jpg"),
     isbn: "9780141441146",
     status: "Finished",
     totalPages: 532,
@@ -121,11 +126,11 @@ const posts = [
     user: "Anya",
     handle: "@reading.window",
     avatar: "A",
-    avatarImage: "/avatars/anya.jpg",
+    avatarImage: assetUrl("avatars/anya.jpg"),
     mood: "morning coffee",
     image: "linear-gradient(135deg, #9fd7ef 0%, #fff1a8 48%, #8bbf5e 100%)",
     book: "Pride and Prejudice",
-    cover: "/covers/pride-and-prejudice.jpg",
+    cover: assetUrl("covers/pride-and-prejudice.jpg"),
     text: "Took Elizabeth Bennet to a tiny coffee place and forgot to check my phone for an hour.",
     likes: 128,
     comments: 14
@@ -135,11 +140,11 @@ const posts = [
     user: "Mila Books",
     handle: "@mila.shelves",
     avatar: "M",
-    avatarImage: "/avatars/mila.jpg",
+    avatarImage: assetUrl("avatars/mila.jpg"),
     mood: "beach chapter",
     image: "linear-gradient(135deg, #b8e4ff 0%, #f9d566 45%, #c88943 100%)",
     book: "Little Women",
-    cover: "/covers/little-women.jpg",
+    cover: assetUrl("covers/little-women.jpg"),
     text: "Still the perfect book for soft light, family drama, and pretending you only meant to read one chapter.",
     likes: 402,
     comments: 33
@@ -149,11 +154,11 @@ const posts = [
     user: "Lera",
     handle: "@after.chapter",
     avatar: "L",
-    avatarImage: "/avatars/lera.jpg",
+    avatarImage: assetUrl("avatars/lera.jpg"),
     mood: "after rain",
     image: "linear-gradient(135deg, #dff5ff 0%, #94c86c 46%, #ffe27a 100%)",
     book: "Jane Eyre",
-    cover: "/covers/jane-eyre.jpg",
+    cover: assetUrl("covers/jane-eyre.jpg"),
     text: "The rain outside made this feel twice as dramatic, which is exactly how it should be.",
     likes: 89,
     comments: 8
@@ -492,6 +497,7 @@ function mergeStoredBooks(storedBooks) {
 
 function normalizeStoredBooks(bookList) {
   return bookList.map((book) => {
+    book.cover = normalizeAssetUrl(book.cover);
     book.note = cleanImportedNote(book.note);
     if (book.status !== "Finished") {
       book.finishedAt = "";
@@ -501,6 +507,12 @@ function normalizeStoredBooks(bookList) {
     }
     return book;
   });
+}
+
+function normalizeAssetUrl(value) {
+  const path = `${value || ""}`;
+  if (!path.startsWith("/covers/") && !path.startsWith("/avatars/") && !path.startsWith("/icons/")) return value;
+  return assetUrl(path);
 }
 
 function cleanImportedNote(note) {
@@ -954,10 +966,10 @@ function userDisplayName() {
 }
 
 function userAvatarUrl() {
-  if (!state.authUser) return "/avatars/you.jpg";
+  if (!state.authUser) return assetUrl("avatars/you.jpg");
   return state.authUser.user_metadata?.avatar_url
     || state.authUser.user_metadata?.picture
-    || "/avatars/you.jpg";
+    || assetUrl("avatars/you.jpg");
 }
 
 function renderAuthPanel() {
@@ -3638,7 +3650,7 @@ function escapeHtml(value) {
 
 if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js");
+    navigator.serviceWorker.register(assetUrl("sw.js"), { scope: APP_BASE });
   });
 }
 
