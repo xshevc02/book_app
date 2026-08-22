@@ -3282,28 +3282,32 @@ h3 {
     min-height: 100%;
   }
 
+  body {
+    overflow-y: auto;
+  }
+
   .phone-shell {
     min-height: 100vh;
     place-items: stretch;
-    padding: 24px;
+    padding: 0;
   }
 
   .app-screen {
-    width: min(100%, 1180px);
-    max-width: calc(100vw - 48px);
-    height: calc(100vh - 48px);
+    width: 100%;
+    max-width: none;
+    height: auto;
     min-height: 720px;
-    margin: 0 auto;
     display: grid;
-    grid-template-columns: 104px minmax(0, 1fr);
+    grid-template-columns: 108px minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
-    border-radius: 30px;
+    border: 0;
+    border-radius: 0;
   }
 
   .topbar {
     grid-column: 2;
     grid-row: 1;
-    padding: 28px 34px 18px;
+    padding: 28px clamp(34px, 5vw, 72px) 18px;
   }
 
   .topbar h1 {
@@ -3313,118 +3317,224 @@ h3 {
   .content {
     grid-column: 2;
     grid-row: 2;
-    padding: 28px 34px 34px;
+    overflow: visible;
+    padding: 28px clamp(34px, 5vw, 72px) 38px;
   }
 
-  .bottom-nav {
-    position: relative;
+  .bottom-nav.toolbar {
+    position: relative !important;
     inset: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
     grid-column: 1;
     grid-row: 1 / 3;
-    width: 104px;
-    height: auto;
+    width: 108px;
+    height: 100%;
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, 78px);
-    align-content: center;
-    gap: 8px;
-    padding: 22px 12px;
+    grid-template-rows: repeat(4, 74px);
+    align-content: start;
+    gap: 10px;
+    padding: 24px 14px;
     border-top: 0;
     border-right: 0.5px solid rgba(255, 232, 190, 0.16);
     box-shadow: 18px 0 42px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
   }
 
-  .nav-item {
-    min-height: 70px;
+  .bottom-nav .nav-item.tab-link {
+    min-width: 0 !important;
+    width: 78px !important;
+    max-width: 78px !important;
+    box-sizing: border-box;
+    justify-self: center;
+    min-height: 74px;
     border-radius: 20px;
   }
 
   .content-home {
+    width: 100%;
     display: grid;
-    grid-template-columns: minmax(300px, 0.82fr) minmax(0, 1fr);
+    grid-template-columns: 1fr;
     grid-auto-rows: min-content;
     align-content: start;
-    gap: 22px;
+    gap: 28px;
+    max-width: 1120px;
+    margin: 0 auto;
   }
 
   .content-home .current-reading-card {
-    grid-row: span 2;
-    min-height: 392px;
+    min-height: 286px;
+    max-height: 306px;
   }
 
   .content-home .home-book-section {
     min-width: 0;
+    margin: 0;
   }
 
-  .content-home .home-book-section:first-of-type {
-    align-self: start;
+  .content-home .current-reading-card p {
+    max-width: 420px;
   }
 
-  .content-home .home-book-section:last-child {
-    grid-column: 1 / -1;
+  .content-home .current-reading-card .current-reading-nav {
+    right: 84px;
+    top: 22px;
+  }
+
+  .content-home .current-reading-card .finish-reading-button {
+    right: 44px;
+    top: 22px;
+  }
+
+  .content-home .current-reading-card .hero-pages-input,
+  .content-home .current-reading-card .progress-wrap {
+    right: 214px;
   }
 
   .hero-panel .book-cover.large {
-    width: 128px;
-    min-height: 188px;
+    width: 124px;
+    min-height: 182px;
+    right: 44px;
+    top: 66px;
+    bottom: auto;
   }
 
   .home-book-rail {
-    gap: 14px;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: clamp(152px, 13vw, 174px);
+    grid-template-columns: none;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 1px 2px 6px;
+    margin-inline: -2px;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 2px;
   }
 
   .home-book-rail .mini-book {
-    min-width: 132px;
+    min-width: 0;
+    min-height: 302px;
+    grid-template-rows: 212px 1.65rem 0.82rem 32px;
+    gap: 3px;
+    scroll-snap-align: start;
+  }
+
+  .home-book-rail .book-cover {
+    height: 212px;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .home-book-rail .mini-book h3 {
+    margin-top: 12px;
+    font-size: 0.78rem;
+  }
+
+  .home-book-rail .mini-book-author {
+    margin-top: 0;
+    font-size: 0.64rem;
+  }
+
+  .home-book-rail .book-status-control.mini-status > button:first-child {
+    font-size: 0.72rem;
+  }
+
+  .rail-controls {
+    display: inline-flex;
   }
 
   .content-feed {
-    max-width: 760px;
+    width: 100%;
+    max-width: 1120px;
     margin: 0 auto;
   }
 
   .feed-tools {
-    position: sticky;
-    top: -28px;
+    position: static;
     z-index: 8;
-    padding-top: 2px;
-    background: linear-gradient(180deg, var(--shop-black), rgba(19, 15, 11, 0));
+    max-width: 1120px;
+    margin: 0 auto 14px;
+    background: transparent;
+  }
+
+  .feed-search {
+    background: var(--glass);
+    border-color: var(--hairline);
+    color: var(--ink);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  }
+
+  .phone-shell[data-app-theme="summer"] .feed-search {
+    background: rgba(255, 255, 255, 0.78);
+  }
+
+  .feed-filters,
+  .feed-suggestions {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+  }
+
+  .feed-list {
+    width: 100%;
+    max-width: 720px;
+    margin-inline: auto;
+  }
+
+  .feed-filters {
+    margin-bottom: 14px;
   }
 
   .post-card {
-    max-width: 680px;
+    width: 100%;
+    max-width: 720px;
     margin-inline: auto;
   }
 
   .post-image {
-    min-height: 430px;
+    height: 430px;
+    min-height: 0;
   }
 
   .content-shelves {
+    width: 100%;
     display: grid;
-    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+    grid-template-columns: 1fr;
     grid-auto-rows: min-content;
     align-content: start;
-    gap: 18px 22px;
+    gap: 18px;
+    max-width: 1120px;
+    margin: 0 auto;
   }
 
   .content-shelves .shelf-mode-tabs,
-  .content-shelves .custom-shelves {
-    grid-column: 1;
-  }
-
-  .content-shelves .shelf-tabs,
-  .content-shelves .shelf-summary-line,
-  .content-shelves .library-list,
-  .content-shelves .bookcase-grid,
-  .content-shelves .custom-shelf-hero {
-    grid-column: 2;
-  }
-
   .content-shelves .shelf-tabs {
+    grid-column: 1;
+    justify-self: center;
+    width: 100%;
     padding-bottom: 0;
   }
 
+  .content-shelves .shelf-mode-tabs {
+    max-width: 520px;
+  }
+
+  .content-shelves .shelf-tabs {
+    max-width: 620px;
+  }
+
+  .content-shelves .custom-shelves,
+  .content-shelves .shelf-summary-line,
   .content-shelves .library-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1;
+  }
+
+  .content-shelves .library-list {
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    align-items: stretch;
   }
 
   .content-shelves .library-item {
@@ -3432,27 +3542,36 @@ h3 {
   }
 
   .custom-shelf-list {
-    grid-template-columns: 1fr;
-  }
-
-  .bookcase-grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   }
 
   .content-profile {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
     display: grid;
-    grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
+    grid-template-columns: repeat(2, minmax(340px, 1fr));
     align-items: start;
     gap: 22px;
   }
 
   .profile-card,
   .reading-calendar-section {
-    min-height: 100%;
+    min-height: 0;
   }
 
   .reading-calendar-section {
+    align-content: start;
     padding: 22px;
+  }
+
+  .reading-calendar-grid {
+    align-items: start;
+    grid-auto-rows: minmax(42px, auto);
+  }
+
+  .calendar-day.empty {
+    min-height: 0;
   }
 
   .calendar-day {
@@ -3460,11 +3579,12 @@ h3 {
   }
 
   .content-detail .detail-page {
-    max-width: 980px;
+    width: 100%;
+    max-width: 1120px;
     margin: 0 auto;
-    grid-template-columns: minmax(340px, 0.95fr) minmax(0, 1.05fr);
+    grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
     align-items: start;
-    gap: 18px 22px;
+    gap: 20px 22px;
   }
 
   .content-detail .detail-header {
@@ -3476,21 +3596,118 @@ h3 {
     grid-column: 1;
   }
 
-  .content-detail .progress-card,
-  .content-detail .finished-date-card,
-  .content-detail .detail-section,
+  .content-detail .progress-editor,
+  .content-detail .finished-date-section,
   .content-detail .feedback-form {
     grid-column: 2;
+  }
+
+  .content-detail .progress-editor,
+  .content-detail .finished-date-section {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .content-detail .progress-card,
+  .content-detail .finished-date-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content-detail .book-detail-hero {
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 18px;
+    min-height: 220px;
+  }
+
+  .content-detail .book-detail-hero .book-cover.large {
+    width: 128px;
+    min-height: 188px;
+  }
+
+  .content-detail .detail-tabs,
+  .content-detail .detail-page > .detail-section:not(.progress-editor):not(.finished-date-section) {
+    grid-column: 1 / -1;
+  }
+
+  .content-detail .description-card,
+  .content-detail .feedback-card,
+  .content-detail .compact-post {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content-detail .section-title .soft-button {
+    width: auto;
+    min-width: 112px;
+    max-width: 180px;
+    justify-self: end;
+    padding-inline: 16px;
   }
 
   .content-detail .library-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .content-detail .custom-shelf-page {
+    width: 100%;
+    max-width: 1120px;
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .content-detail .custom-shelf-page .detail-header,
+  .content-detail .custom-shelf-page .custom-shelf-hero,
+  .content-detail .custom-shelf-page .bookcase-grid,
+  .content-detail .custom-shelf-page .add-to-custom-shelf {
+    grid-column: 1;
+  }
+
+  .content-detail .custom-shelf-page .bookcase-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 18px 16px;
+  }
+
+  .content-detail .custom-shelf-page .bookcase-book .book-cover {
+    height: 220px;
+    min-height: 0;
+  }
+
   .content-add-book,
   .content-compose {
-    max-width: 760px;
+    width: 100%;
+    max-width: 1120px;
     margin: 0 auto;
+  }
+
+  .content-add-book .add-book-page,
+  .content-compose .compose-page,
+  .content-compose .compose-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content-add-book .add-page-header,
+  .content-add-book .add-search-block,
+  .content-add-book .add-results,
+  .content-add-book .manual-book-card,
+  .content-compose .compose-page {
+    width: 100%;
+    max-width: 1120px;
+    margin-inline: auto;
+  }
+
+  .content-add-book .add-result-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .content-compose .compose-page {
+    padding: 18px;
+  }
+
+  .content-compose .compose-preview {
+    grid-template-columns: 132px 1fr;
   }
 
   .feedback-prompt {
