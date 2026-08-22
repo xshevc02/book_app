@@ -1,0 +1,42 @@
+const CACHE_NAME = "pockland-v145";
+const ASSETS = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
+  "/src/main.js",
+  "/src/styles.css",
+  "/covers/frankenstein.jpg",
+  "/covers/jane-eyre.jpg",
+  "/covers/little-women.jpg",
+  "/covers/pride-and-prejudice.jpg",
+  "/avatars/anya.jpg",
+  "/avatars/lera.jpg",
+  "/avatars/mila.jpg",
+  "/avatars/you.jpg",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png"
+];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      return cached || fetch(event.request).catch(() => caches.match("/"));
+    })
+  );
+});
