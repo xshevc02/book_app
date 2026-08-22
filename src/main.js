@@ -120,6 +120,8 @@ let books = [
   }
 ];
 
+const defaultBooks = cloneBooks(books);
+
 const posts = [
   {
     id: "post-1",
@@ -597,7 +599,7 @@ function loadLocalData() {
 
     const data = JSON.parse(rawData);
     if (data.theme) state.theme = data.theme;
-    if (Array.isArray(data.books)) books = normalizeStoredBooks(mergeStoredBooks(data.books));
+    if (Array.isArray(data.books)) books = normalizeStoredBooks(mergeStoredBooks(data.books, defaultBooks));
     if (Array.isArray(data.customShelves)) customShelves = data.customShelves;
     if (Array.isArray(data.userPosts)) state.userPosts = data.userPosts;
     if (Array.isArray(data.liked)) state.liked = new Set(data.liked);
@@ -609,13 +611,13 @@ function loadLocalData() {
   seedCalendarDemoProgress();
 }
 
-function mergeStoredBooks(storedBooks) {
+function mergeStoredBooks(storedBooks, baseBooks = books) {
   const storedByTitle = new Map(
     storedBooks
       .filter((book) => book?.title)
       .map((book) => [book.title.toLowerCase(), book])
   );
-  const merged = books.map((book) => {
+  const merged = cloneBooks(baseBooks).map((book) => {
     const stored = storedByTitle.get(book.title.toLowerCase());
     if (!stored) return book;
     storedByTitle.delete(book.title.toLowerCase());
@@ -626,6 +628,14 @@ function mergeStoredBooks(storedBooks) {
     ...merged,
     ...storedByTitle.values()
   ];
+}
+
+function cloneBooks(bookList) {
+  return bookList.map((book) => ({
+    ...book,
+    readingDates: Array.isArray(book.readingDates) ? [...book.readingDates] : book.readingDates,
+    subjects: Array.isArray(book.subjects) ? [...book.subjects] : book.subjects
+  }));
 }
 
 function normalizeStoredBooks(bookList) {
@@ -715,7 +725,7 @@ function userStatePayload() {
 function applyUserStatePayload(payload) {
   if (!payload) return;
   if (payload.theme === "autumn" || payload.theme === "summer") state.theme = payload.theme;
-  if (Array.isArray(payload.books)) books = normalizeStoredBooks(mergeStoredBooks(payload.books));
+  if (Array.isArray(payload.books)) books = normalizeStoredBooks(mergeStoredBooks(payload.books, defaultBooks));
   if (Array.isArray(payload.customShelves)) customShelves = payload.customShelves;
   if (Array.isArray(payload.liked)) state.liked = new Set(payload.liked);
   if (Array.isArray(payload.saved)) state.saved = new Set(payload.saved);
@@ -2147,10 +2157,10 @@ function openLibraryBook(item) {
 async function enrichOpenLibraryBook(book) {
   const isbn = cleanIsbn(book?.isbn);
   if (!book || (!book.openLibraryKey && !book.openLibraryEditionKey && !isbn)) return book;
-  if (book.openLibraryLoaded && hasUsefulDescription(book.description) && book.communityRating) return book;
+  if (book.openLibraryLoaded && hasUsefulDescription(book.description) && book.communityRating && !bookNeedsCover(book)) return book;
 
   try {
-    const searchMatch = book.communityRating ? null : await fetchOpenLibraryRatingMatch(book);
+    const searchMatch = book.communityRating && !bookNeedsCover(book) ? null : await fetchOpenLibraryRatingMatch(book);
     const edition = book.openLibraryEditionKey
       ? await fetchOpenLibraryJson(`/books/${book.openLibraryEditionKey}`)
       : isbn ? await fetchOpenLibraryJson(`/isbn/${isbn}`) : null;
@@ -2168,9 +2178,17 @@ async function enrichOpenLibraryBook(book) {
       : fallbackBookDescription(book);
     const pages = edition?.number_of_pages || work?.number_of_pages || book.totalPages;
     const subjects = Array.isArray(work?.subjects) ? work.subjects.slice(0, 5) : book.subjects;
+    const openLibraryCover = coverFromOpenLibraryData(edition)
+      || coverFromOpenLibraryData(work)
+      || searchMatch?.cover
+      || "";
+    const googleMetadata = openLibraryCover && hasUsefulDescription(googleDescription)
+      ? null
+      : await fetchGoogleBooksMetadata(book);
 
     Object.assign(book, {
-      description: googleDescription || fallbackDescription || description || "No description yet.",
+      cover: bookNeedsCover(book) ? (openLibraryCover || googleMetadata?.cover || book.cover || "") : book.cover,
+      description: googleMetadata?.description || googleDescription || fallbackDescription || description || "No description yet.",
       totalPages: pages || book.totalPages || 320,
       subjects: subjects || [],
       openLibraryKey: workKey || searchMatch?.openLibraryKey || book.openLibraryKey || "",
@@ -2180,13 +2198,24 @@ async function enrichOpenLibraryBook(book) {
       openLibraryLoaded: true
     });
   } catch {
-    const googleDescription = await fetchGoogleBooksDescription(book);
-    const fallbackDescription = googleDescription ? "" : fallbackBookDescription(book);
-    if (googleDescription || fallbackDescription) book.description = googleDescription || fallbackDescription;
-    book.openLibraryLoaded = hasUsefulDescription(book.description) && Boolean(book.communityRating);
+    const googleMetadata = await fetchGoogleBooksMetadata(book);
+    const fallbackDescription = googleMetadata?.description ? "" : fallbackBookDescription(book);
+    if (bookNeedsCover(book) && googleMetadata?.cover) book.cover = googleMetadata.cover;
+    if (googleMetadata?.description || fallbackDescription) book.description = googleMetadata?.description || fallbackDescription;
+    book.openLibraryLoaded = hasUsefulDescription(book.description) && Boolean(book.communityRating) && !bookNeedsCover(book);
   }
 
   return book;
+}
+
+function bookNeedsCover(book) {
+  return !book?.cover || book.cover === CUSTOM_COVER_PLACEHOLDER;
+}
+
+function coverFromOpenLibraryData(data) {
+  const coverId = data?.covers?.[0] || data?.cover_i || data?.cover_id;
+  if (coverId) return `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`;
+  return "";
 }
 
 async function fetchOpenLibraryJson(path) {
@@ -2219,6 +2248,7 @@ async function fetchOpenLibraryRatingMatch(book) {
     return {
       openLibraryKey: match.key || book.openLibraryKey || "",
       openLibraryEditionKey: match.edition_key?.[0] || book.openLibraryEditionKey || "",
+      cover: match.cover_i ? `https://covers.openlibrary.org/b/id/${match.cover_i}-M.jpg` : "",
       communityRating: Number(match.ratings_average).toFixed(1),
       ratingsCount: match.ratings_count || 0
     };
@@ -2239,9 +2269,14 @@ function openLibrarySearchMatch(item, book) {
 }
 
 async function fetchGoogleBooksDescription(book) {
+  const metadata = await fetchGoogleBooksMetadata(book);
+  return metadata.description;
+}
+
+async function fetchGoogleBooksMetadata(book) {
   try {
     const query = googleBooksQuery(book);
-    if (!query) return "";
+    if (!query) return { description: "", cover: "" };
 
     const params = new URLSearchParams({
       q: query,
@@ -2249,14 +2284,18 @@ async function fetchGoogleBooksDescription(book) {
       printType: "books"
     });
     const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
-    if (!response.ok) return "";
+    if (!response.ok) return { description: "", cover: "" };
 
     const data = await response.json();
     const exact = (data.items || []).find((item) => googleBookMatches(item.volumeInfo, book));
     const volume = exact?.volumeInfo || data.items?.[0]?.volumeInfo;
-    return normalizeOpenLibraryText(volume?.description);
+    const cover = volume?.imageLinks?.thumbnail || volume?.imageLinks?.smallThumbnail || "";
+    return {
+      description: normalizeOpenLibraryText(volume?.description),
+      cover: cover.replace(/^http:/, "https:")
+    };
   } catch {
-    return "";
+    return { description: "", cover: "" };
   }
 }
 
