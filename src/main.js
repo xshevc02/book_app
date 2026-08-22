@@ -611,14 +611,22 @@ async function bootstrapBackend() {
 
   try {
     const session = await getAuthSession();
+    clearAuthHashFromUrl();
     await applySession(session, { migrateLocal: true });
     unsubscribeAuth = onAuthChange((nextSession) => {
+      clearAuthHashFromUrl();
       applySession(nextSession, { migrateLocal: true });
     });
   } catch {
+    clearAuthHashFromUrl();
     state.authStatus = "error";
     render({ preserveScroll: true });
   }
+}
+
+function clearAuthHashFromUrl() {
+  if (!window.location.hash.includes("access_token=") && !window.location.hash.includes("refresh_token=")) return;
+  window.history.replaceState(window.history.state, document.title, `${window.location.pathname}${window.location.search}`);
 }
 
 async function applySession(session, options = {}) {

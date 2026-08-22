@@ -1,4 +1,4 @@
-const CACHE_NAME = "pockland-v147";
+const CACHE_NAME = "pockland-v148";
 const scopeUrl = new URL(self.registration.scope);
 const scopedUrl = (path) => new URL(path, scopeUrl).toString();
 const ASSETS = [
