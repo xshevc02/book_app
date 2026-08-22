@@ -629,6 +629,26 @@ function clearAuthHashFromUrl() {
   window.history.replaceState(window.history.state, document.title, `${window.location.pathname}${window.location.search}`);
 }
 
+function removeLegacyPwaCache() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => {
+        registrations
+          .filter((registration) => registration.scope.includes(APP_BASE))
+          .forEach((registration) => registration.unregister());
+      })
+      .catch(() => {});
+  }
+
+  if ("caches" in window) {
+    caches.keys()
+      .then((keys) => keys
+        .filter((key) => key.startsWith("pockland-"))
+        .forEach((key) => caches.delete(key)))
+      .catch(() => {});
+  }
+}
+
 async function applySession(session, options = {}) {
   state.authUser = session?.user || null;
   state.authStatus = state.authUser ? "signed-in" : "signed-out";
@@ -732,7 +752,7 @@ function render(options = {}) {
     <main class="phone-shell ios" data-app-theme="${state.theme}">
       <section class="app-screen page">
         ${renderHeader()}
-        <div class="content">${renderContent()}</div>
+        <div class="content ${contentViewClass()}">${renderContent()}</div>
         ${state.feedbackPromptBook ? renderFeedbackPrompt() : ""}
         ${state.removeBookPrompt ? renderRemoveBookPrompt() : ""}
         ${renderNav()}
@@ -752,6 +772,13 @@ function render(options = {}) {
   } else {
     state.contentScrollTop = 0;
   }
+}
+
+function contentViewClass() {
+  if (state.detailPage) return `content-detail content-detail-${state.detailPage.type}`;
+  if (state.addingBook) return "content-add-book";
+  if (state.composing) return "content-compose";
+  return `content-${state.tab}`;
 }
 
 function renderContent() {
@@ -3656,11 +3683,6 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;");
 }
 
-if (import.meta.env.PROD && "serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register(assetUrl("sw.js"), { scope: APP_BASE });
-  });
-}
-
+removeLegacyPwaCache();
 render();
 bootstrapBackend();
