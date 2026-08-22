@@ -437,6 +437,139 @@ const awardPicks = [
   }
 ];
 
+const trendingFallbackPicks = [
+  {
+    title: "The Secret History",
+    author: "Donna Tartt",
+    cover: "https://covers.openlibrary.org/b/isbn/9781400031702-M.jpg",
+    isbn: "9781400031702",
+    status: "",
+    totalPages: 559,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.2",
+    description: "A dark academic novel about beauty, obsession, friendship, and the consequences of trying to live inside an idea.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Tomorrow, and Tomorrow, and Tomorrow",
+    author: "Gabrielle Zevin",
+    cover: "https://covers.openlibrary.org/b/isbn/9780593321201-M.jpg",
+    isbn: "9780593321201",
+    status: "",
+    totalPages: 416,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.2",
+    description: "A novel about creative partnership, games, friendship, ambition, and the many lives people build together.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "The Seven Husbands of Evelyn Hugo",
+    author: "Taylor Jenkins Reid",
+    cover: "https://covers.openlibrary.org/b/isbn/9781501161933-M.jpg",
+    isbn: "9781501161933",
+    status: "",
+    totalPages: 400,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.4",
+    description: "An old Hollywood story about fame, desire, image, truth, and the costs of becoming unforgettable.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Lessons in Chemistry",
+    author: "Bonnie Garmus",
+    cover: "https://covers.openlibrary.org/b/isbn/9780385547345-M.jpg",
+    isbn: "9780385547345",
+    status: "",
+    totalPages: 400,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.3",
+    description: "A witty novel about science, ambition, sexism, cooking, and refusing to shrink yourself for the room.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Babel",
+    author: "R. F. Kuang",
+    cover: "https://covers.openlibrary.org/b/isbn/9780063021426-M.jpg",
+    isbn: "9780063021426",
+    status: "",
+    totalPages: 560,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.2",
+    description: "A fantasy of translation, empire, scholarship, language, and rebellion inside a glittering academic machine.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Normal People",
+    author: "Sally Rooney",
+    cover: "https://covers.openlibrary.org/b/isbn/9781984822185-M.jpg",
+    isbn: "9781984822185",
+    status: "",
+    totalPages: 273,
+    readPages: 0,
+    progress: 0,
+    communityRating: "3.8",
+    description: "A spare, intimate novel about class, love, timing, and the private weather between two people.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Demon Copperhead",
+    author: "Barbara Kingsolver",
+    cover: "https://covers.openlibrary.org/b/isbn/9780063251922-M.jpg",
+    isbn: "9780063251922",
+    status: "",
+    totalPages: 560,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.5",
+    description: "A modern Appalachian David Copperfield about poverty, foster care, addiction, voice, and endurance.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Yellowface",
+    author: "R. F. Kuang",
+    cover: "https://covers.openlibrary.org/b/isbn/9780063250833-M.jpg",
+    isbn: "9780063250833",
+    status: "",
+    totalPages: 336,
+    readPages: 0,
+    progress: 0,
+    communityRating: "3.8",
+    description: "A sharp publishing-world satire about authorship, theft, race, ambition, and online spectacle.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "The Song of Achilles",
+    author: "Madeline Miller",
+    cover: "https://covers.openlibrary.org/b/isbn/9780062060624-M.jpg",
+    isbn: "9780062060624",
+    status: "",
+    totalPages: 378,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.3",
+    description: "A lyrical retelling of Achilles and Patroclus, full of tenderness, war, fate, and mythic heartbreak.",
+    note: "Saved discovery pick."
+  },
+  {
+    title: "Project Hail Mary",
+    author: "Andy Weir",
+    cover: "https://covers.openlibrary.org/b/isbn/9780593135204-M.jpg",
+    isbn: "9780593135204",
+    status: "",
+    totalPages: 496,
+    readPages: 0,
+    progress: 0,
+    communityRating: "4.5",
+    description: "A science-forward space survival story about memory, problem-solving, friendship, and saving more than yourself.",
+    note: "Saved discovery pick."
+  }
+];
+
 let customShelves = [
   {
     id: "rainy-days",
@@ -641,9 +774,10 @@ function removeLegacyPwaCache() {
   }
 
   if ("caches" in window) {
+    const cacheNameLooksOurs = (key) => /pockland|book[_-]?app|workbox|precache|vite/i.test(key);
     caches.keys()
       .then((keys) => keys
-        .filter((key) => key.startsWith("pockland-"))
+        .filter(cacheNameLooksOurs)
         .forEach((key) => caches.delete(key)))
       .catch(() => {});
   }
@@ -953,13 +1087,13 @@ function wishlistNextPicks() {
 }
 
 function trendingHomeBooks() {
-  return state.openLibraryTrendingBooks.length ? state.openLibraryTrendingBooks : [];
+  return state.openLibraryTrendingBooks.length ? state.openLibraryTrendingBooks : trendingFallbackPicks;
 }
 
 function trendingStatusLabel() {
-  if (state.openLibraryTrendingStatus === "loading") return "Loading from the book database";
-  if (state.openLibraryTrendingStatus === "error") return "Couldn’t reach Open Library";
-  return "Live-ish discovery shelf";
+  if (state.openLibraryTrendingStatus === "loading") return "Checking Open Library";
+  if (state.openLibraryTrendingStatus === "error") return "Saved picks while Open Library is quiet";
+  return "Weekly Open Library picks";
 }
 
 function hydrateDisplayBook(book) {
@@ -1840,6 +1974,7 @@ function addBookResults() {
 function homeDiscoveryBooks() {
   return [
     ...state.openLibraryTrendingBooks,
+    ...trendingFallbackPicks,
     ...awardPicks
   ];
 }
@@ -1861,21 +1996,46 @@ function ensureOpenLibraryTrending() {
 }
 
 async function fetchOpenLibraryTrendingBooks() {
-  const params = new URLSearchParams({
-    q: "fiction",
-    sort: "trending",
-    fields: "key,title,author_name,isbn,cover_i,first_publish_year,number_of_pages_median,number_of_pages,first_sentence,subtitle,edition_key,ratings_average,ratings_count",
-    limit: "20"
-  });
-  const response = await fetch(`https://openlibrary.org/search.json?${params.toString()}`);
+  const response = await fetchWithTimeout("https://openlibrary.org/trending/weekly.json?limit=50", 7000);
   if (!response.ok) throw new Error("Open Library trending failed");
   const data = await response.json();
   const seen = new Set(books.map((book) => book.title.toLowerCase()));
-  return (data.docs || [])
+  const results = qualityTrendingBooks(data.works || data.docs || [])
     .map(openLibraryBook)
     .filter(Boolean)
     .filter((book) => !seen.has(book.title.toLowerCase()))
     .slice(0, 20);
+  if (results.length < 8) throw new Error("Open Library trending returned too few usable books");
+  return results;
+}
+
+function qualityTrendingBooks(items) {
+  const seen = new Set();
+
+  return items.filter((item) => {
+    const title = item.title?.trim();
+    const author = item.author_name?.[0] || item.authors?.[0]?.name;
+    const coverId = item.cover_i || item.cover_id || item.covers?.[0];
+    const rating = Number(item.ratings_average || 0);
+    const ratingsCount = Number(item.ratings_count || 0);
+
+    if (!title || !author || !coverId) return false;
+    if (seen.has(title.toLowerCase())) return false;
+    if (rating && (rating < 3.7 || ratingsCount < 30)) return false;
+
+    seen.add(title.toLowerCase());
+    return true;
+  });
+}
+
+async function fetchWithTimeout(url, timeoutMs = 7000, options = {}) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 function queueRemoteBookSearch(query) {
@@ -1959,16 +2119,17 @@ function queueComposeBookSearch(query) {
 
 function openLibraryBook(item) {
   const title = item.title;
-  const author = item.author_name?.[0] || "Unknown author";
+  const author = item.author_name?.[0] || item.authors?.[0]?.name || "Unknown author";
+  const coverId = item.cover_i || item.cover_id || item.covers?.[0];
   if (!title) return null;
 
   return {
     title,
     author,
-    cover: item.cover_i
-      ? `https://covers.openlibrary.org/b/id/${item.cover_i}-M.jpg`
+    cover: coverId
+      ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg`
       : CUSTOM_COVER_PLACEHOLDER,
-    isbn: item.isbn?.[0] || "Unknown",
+    isbn: item.isbn?.[0] || item.isbn_13?.[0] || item.isbn_10?.[0] || "Unknown",
     status: "",
     totalPages: item.number_of_pages || item.number_of_pages_median || 320,
     readPages: 0,

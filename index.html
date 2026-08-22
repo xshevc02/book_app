@@ -8,6 +8,33 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      (() => {
+        const purgeKey = "pockland-pwa-purge-v3";
+        const cacheNameLooksOurs = (key) =>
+          /pockland|book[_-]?app|workbox|precache|vite/i.test(key);
+
+        if ("caches" in window) {
+          caches.keys()
+            .then((keys) => Promise.all(keys.filter(cacheNameLooksOurs).map((key) => caches.delete(key))))
+            .catch(() => {});
+        }
+
+        if (!("serviceWorker" in navigator)) return;
+
+        navigator.serviceWorker.getRegistrations()
+          .then((registrations) => Promise.all(registrations
+            .filter((registration) => registration.scope.includes("/book_app/") || registration.scope === `${window.location.origin}/`)
+            .map((registration) => registration.unregister())))
+          .then(() => {
+            if (navigator.serviceWorker.controller && !sessionStorage.getItem(purgeKey)) {
+              sessionStorage.setItem(purgeKey, "1");
+              window.location.reload();
+            }
+          })
+          .catch(() => {});
+      })();
+    </script>
     <script type="module" src="/src/main.js?v=148"></script>
   </body>
 </html>
