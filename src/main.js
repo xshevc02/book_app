@@ -15,6 +15,7 @@ import {
 } from "./supabaseClient.js";
 
 const APP_BASE = import.meta.env.BASE_URL || "/";
+const GOOGLE_BOOKS_API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || "";
 const STORAGE_KEY = "book-nook-local-db-v1";
 
 function assetUrl(path) {
@@ -2186,6 +2187,7 @@ async function fetchGoogleBooks(query) {
     maxResults: "10",
     printType: "books"
   });
+  if (GOOGLE_BOOKS_API_KEY) params.set("key", GOOGLE_BOOKS_API_KEY);
   const response = await fetchWithTimeout(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, 7000);
   if (!response.ok) throw new Error("Google Books search failed");
   const data = await response.json();
@@ -2425,6 +2427,7 @@ async function fetchGoogleBooksMetadata(book) {
       maxResults: "5",
       printType: "books"
     });
+    if (GOOGLE_BOOKS_API_KEY) params.set("key", GOOGLE_BOOKS_API_KEY);
     const response = await fetchWithTimeout(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, 7000);
     if (!response.ok) return emptyGoogleBooksMetadata();
 
