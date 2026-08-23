@@ -3259,9 +3259,16 @@ h3 {
   background: transparent;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 899px) {
+  html,
+  body {
+    overflow: hidden;
+  }
+
   .phone-shell {
     padding: 0;
+    min-height: var(--app-height, 100dvh);
+    display: block;
   }
 
   .app-screen {
@@ -3281,11 +3288,30 @@ h3 {
   .topbar {
     padding-top: max(18px, env(safe-area-inset-top));
   }
+
+  .home-book-rail {
+    grid-auto-columns: clamp(124px, 31vw, 168px);
+  }
+
+  .home-book-rail .mini-book {
+    grid-template-rows: auto 1.58rem 0.78rem 30px;
+  }
+
+  .home-book-rail .book-cover {
+    min-height: 0;
+  }
 }
 
 @media (hover: none) and (pointer: coarse) {
+  html,
+  body {
+    overflow: hidden;
+  }
+
   .phone-shell {
     padding: 0;
+    min-height: var(--app-height, 100dvh);
+    display: block;
   }
 
   .app-screen {
