@@ -2129,13 +2129,13 @@ function queueRemoteBookSearch(query) {
   const requestId = addBookRequestId + 1;
   addBookRequestId = requestId;
   addBookSearchTimer = window.setTimeout(() => {
-    searchOpenLibrary(value, requestId);
+    searchOnlineBooks(value, requestId);
   }, 450);
 }
 
-async function searchOpenLibrary(query, requestId) {
+async function searchOnlineBooks(query, requestId) {
   try {
-    const results = await fetchOpenLibraryBooks(query);
+    const results = await fetchBookSearchResults(query);
     if (requestId !== addBookRequestId || state.addBookQuery.trim() !== query) return;
 
     state.remoteBookResults = results;
@@ -2147,6 +2147,23 @@ async function searchOpenLibrary(query, requestId) {
     state.remoteBookStatus = "error";
     render({ preserveScroll: true, persist: false, focus: "[data-add-book-search]" });
   }
+}
+
+async function fetchBookSearchResults(query) {
+  const [openLibrary, googleBooks] = await Promise.allSettled([
+    fetchOpenLibraryBooks(query),
+    fetchGoogleBooks(query)
+  ]);
+
+  const openLibraryResults = openLibrary.status === "fulfilled" ? openLibrary.value : [];
+  const googleResults = googleBooks.status === "fulfilled" ? googleBooks.value : [];
+  const results = uniqueBookResults([...openLibraryResults, ...googleResults]);
+
+  if (!results.length && openLibrary.status === "rejected" && googleBooks.status === "rejected") {
+    throw new Error("Book search failed");
+  }
+
+  return results;
 }
 
 async function fetchOpenLibraryBooks(query) {
@@ -2163,6 +2180,34 @@ async function fetchOpenLibraryBooks(query) {
     .filter(Boolean);
 }
 
+async function fetchGoogleBooks(query) {
+  const params = new URLSearchParams({
+    q: query,
+    maxResults: "10",
+    printType: "books"
+  });
+  const response = await fetchWithTimeout(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, 7000);
+  if (!response.ok) throw new Error("Google Books search failed");
+  const data = await response.json();
+  return (data.items || [])
+    .map(googleBook)
+    .filter(Boolean);
+}
+
+function uniqueBookResults(results) {
+  const seen = new Set();
+
+  return results.filter((book) => {
+    const isbn = cleanIsbn(book.isbn);
+    const key = isbn
+      ? `isbn:${isbn}`
+      : `title:${normalizeForMatch(book.title)}|author:${normalizeForMatch(book.author)}`;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function queueComposeBookSearch(query) {
   window.clearTimeout(composeBookSearchTimer);
   const value = query.trim();
@@ -2177,7 +2222,7 @@ function queueComposeBookSearch(query) {
   composeBookRequestId = requestId;
   composeBookSearchTimer = window.setTimeout(async () => {
     try {
-      const results = await fetchOpenLibraryBooks(value);
+      const results = await fetchBookSearchResults(value);
       if (requestId !== composeBookRequestId || state.composeBookQuery.trim() !== value) return;
       state.composeBookResults = results;
       state.composeBookStatus = "done";
@@ -2217,9 +2262,40 @@ function openLibraryBook(item) {
   };
 }
 
+function googleBook(item) {
+  const volume = item.volumeInfo || {};
+  const title = volume.title?.trim();
+  if (!title) return null;
+
+  const identifiers = volume.industryIdentifiers || [];
+  const isbn = identifiers.find((identifier) => identifier.type === "ISBN_13")?.identifier
+    || identifiers.find((identifier) => identifier.type === "ISBN_10")?.identifier
+    || identifiers[0]?.identifier
+    || "Unknown";
+  const cover = volume.imageLinks?.thumbnail || volume.imageLinks?.smallThumbnail || "";
+
+  return {
+    title,
+    author: volume.authors?.[0] || "Unknown author",
+    cover: cover ? cover.replace(/^http:/, "https:") : CUSTOM_COVER_PLACEHOLDER,
+    isbn,
+    status: "",
+    totalPages: volume.pageCount || 320,
+    readPages: 0,
+    progress: 0,
+    googleBooksId: item.id || "",
+    openLibraryKey: "",
+    openLibraryEditionKey: "",
+    communityRating: volume.averageRating ? Number(volume.averageRating).toFixed(1) : "",
+    ratingsCount: volume.ratingsCount || 0,
+    description: normalizeOpenLibraryText(volume.description) || "No description yet.",
+    note: "Imported from the book database."
+  };
+}
+
 async function enrichOpenLibraryBook(book) {
   const isbn = cleanIsbn(book?.isbn);
-  if (!book || (!book.openLibraryKey && !book.openLibraryEditionKey && !isbn)) return book;
+  if (!book || !book.title) return book;
   if (book.openLibraryLoaded && hasUsefulDescription(book.description) && book.communityRating && !bookNeedsCover(book)) return book;
 
   try {
@@ -2252,12 +2328,12 @@ async function enrichOpenLibraryBook(book) {
     Object.assign(book, {
       cover: bookNeedsCover(book) ? (openLibraryCover || googleMetadata?.cover || book.cover || "") : book.cover,
       description: googleMetadata?.description || googleDescription || fallbackDescription || description || "No description yet.",
-      totalPages: pages || book.totalPages || 320,
+      totalPages: googleMetadata?.totalPages || pages || book.totalPages || 320,
       subjects: subjects || [],
       openLibraryKey: workKey || searchMatch?.openLibraryKey || book.openLibraryKey || "",
       openLibraryEditionKey: book.openLibraryEditionKey || edition?.key?.replace("/books/", "") || searchMatch?.openLibraryEditionKey || "",
-      communityRating: searchMatch?.communityRating || book.communityRating || "",
-      ratingsCount: searchMatch?.ratingsCount || book.ratingsCount || 0,
+      communityRating: searchMatch?.communityRating || book.communityRating || googleMetadata?.communityRating || "",
+      ratingsCount: searchMatch?.ratingsCount || book.ratingsCount || googleMetadata?.ratingsCount || 0,
       openLibraryLoaded: true
     });
   } catch {
@@ -2265,6 +2341,9 @@ async function enrichOpenLibraryBook(book) {
     const fallbackDescription = googleMetadata?.description ? "" : fallbackBookDescription(book);
     if (bookNeedsCover(book) && googleMetadata?.cover) book.cover = googleMetadata.cover;
     if (googleMetadata?.description || fallbackDescription) book.description = googleMetadata?.description || fallbackDescription;
+    if (googleMetadata?.totalPages) book.totalPages = googleMetadata.totalPages;
+    if (!book.communityRating && googleMetadata?.communityRating) book.communityRating = googleMetadata.communityRating;
+    if (!book.ratingsCount && googleMetadata?.ratingsCount) book.ratingsCount = googleMetadata.ratingsCount;
     book.openLibraryLoaded = hasUsefulDescription(book.description) && Boolean(book.communityRating) && !bookNeedsCover(book);
   }
 
@@ -2339,27 +2418,42 @@ async function fetchGoogleBooksDescription(book) {
 async function fetchGoogleBooksMetadata(book) {
   try {
     const query = googleBooksQuery(book);
-    if (!query) return { description: "", cover: "" };
+    if (!query) return emptyGoogleBooksMetadata();
 
     const params = new URLSearchParams({
       q: query,
       maxResults: "5",
       printType: "books"
     });
-    const response = await fetch(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`);
-    if (!response.ok) return { description: "", cover: "" };
+    const response = await fetchWithTimeout(`https://www.googleapis.com/books/v1/volumes?${params.toString()}`, 7000);
+    if (!response.ok) return emptyGoogleBooksMetadata();
 
     const data = await response.json();
     const exact = (data.items || []).find((item) => googleBookMatches(item.volumeInfo, book));
     const volume = exact?.volumeInfo || data.items?.[0]?.volumeInfo;
+    if (!volume) return emptyGoogleBooksMetadata();
+
     const cover = volume?.imageLinks?.thumbnail || volume?.imageLinks?.smallThumbnail || "";
     return {
       description: normalizeOpenLibraryText(volume?.description),
-      cover: cover.replace(/^http:/, "https:")
+      cover: cover.replace(/^http:/, "https:"),
+      totalPages: volume.pageCount || 0,
+      communityRating: volume.averageRating ? Number(volume.averageRating).toFixed(1) : "",
+      ratingsCount: volume.ratingsCount || 0
     };
   } catch {
-    return { description: "", cover: "" };
+    return emptyGoogleBooksMetadata();
   }
+}
+
+function emptyGoogleBooksMetadata() {
+  return {
+    description: "",
+    cover: "",
+    totalPages: 0,
+    communityRating: "",
+    ratingsCount: 0
+  };
 }
 
 function googleBooksQuery(book) {
