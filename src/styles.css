@@ -2822,21 +2822,22 @@ h3 {
 .calendar-day > div {
   position: absolute;
   left: 50%;
-  bottom: 4px;
+  bottom: clamp(4px, 8%, 9px);
   transform: translateX(-50%);
   max-width: calc(100% - 6px);
   display: flex;
   justify-content: center;
-  gap: 2px;
+  gap: clamp(2px, 5%, 5px);
 }
 
 .calendar-day button {
-  width: 13px;
-  height: 17px;
+  width: clamp(13px, 42%, 34px);
+  aspect-ratio: 0.68;
+  height: auto;
   flex: 0 0 auto;
   padding: 0;
   overflow: hidden;
-  border-radius: 4px 2px 2px 4px;
+  border-radius: 6px 3px 3px 6px;
   background: rgba(0, 0, 0, 0.2);
   border: 0;
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.18);
@@ -3641,6 +3642,10 @@ h3 {
 
   .calendar-day {
     border-radius: 14px;
+  }
+
+  .calendar-day button {
+    width: clamp(22px, 46%, 46px);
   }
 
   .content-detail .detail-page {
