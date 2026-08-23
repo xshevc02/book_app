@@ -3334,6 +3334,7 @@ function bindEvents() {
     content.addEventListener("scroll", () => {
       state.contentScrollTop = content.scrollTop;
     });
+    bindPageScrollProxy(content);
   }
 
   app.onclick = (event) => {
@@ -4005,6 +4006,21 @@ function bindEvents() {
       }
     });
   });
+}
+
+function bindPageScrollProxy(content) {
+  const screen = document.querySelector(".app-screen");
+  if (!screen) return;
+
+  screen.addEventListener("wheel", (event) => {
+    if (!event.deltaY) return;
+    if (event.target.closest(".topbar, .bottom-nav, input, textarea, select")) return;
+    if (event.target.closest(".home-book-rail") && Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+
+    event.preventDefault();
+    content.scrollBy({ top: event.deltaY, left: 0 });
+    state.contentScrollTop = content.scrollTop;
+  }, { passive: false });
 }
 
 function toggleSet(set, value) {
