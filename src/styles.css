@@ -1157,7 +1157,8 @@ h3 {
 }
 
 .book-status-control.detail-action {
-  width: 168px;
+  width: 100%;
+  max-width: 168px;
 }
 
 .book-status-control.shelf-status {
@@ -1306,11 +1307,19 @@ h3 {
 .book-detail-controls > div:not(.book-status-field),
 .book-status-field {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+.book-status-field {
+  min-width: 0;
+}
+
+.book-status-field .book-status-control {
+  justify-self: start;
 }
 
 .book-detail-controls strong {
