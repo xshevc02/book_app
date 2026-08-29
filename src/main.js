@@ -64,6 +64,7 @@ const state = {
   feedbackPromptPrevious: null,
   editingFeedbackBook: "",
   removeBookPrompt: "",
+  removeShelfPrompt: "",
   openFinishedDatePicker: "",
   finishedDatePickerMonth: "",
   calendarDemoSeeded: false,
@@ -924,6 +925,7 @@ function render(options = {}) {
         <div class="content ${contentViewClass()}">${renderContent()}</div>
         ${state.feedbackPromptBook ? renderFeedbackPrompt() : ""}
         ${state.removeBookPrompt ? renderRemoveBookPrompt() : ""}
+        ${state.removeShelfPrompt ? renderRemoveShelfPrompt() : ""}
         ${renderNav()}
         ${renderStatusMenuOverlay()}
       </section>
@@ -1065,6 +1067,28 @@ function renderRemoveBookPrompt() {
         <div class="feedback-prompt-actions">
           <button class="button" type="button" data-remove-book-cancel>Cancel</button>
           <button class="button button-fill remove-confirm-button" type="button" data-remove-book-confirm="${escapeHtml(book.title)}">Remove</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderRemoveShelfPrompt() {
+  const shelf = customShelves.find((item) => item.id === state.removeShelfPrompt);
+  if (!shelf) return "";
+
+  return `
+    <section class="feedback-prompt" role="dialog" aria-label="Delete shelf">
+      <div class="feedback-prompt-card remove-book-card">
+        <button class="feedback-prompt-close" type="button" data-remove-shelf-cancel aria-label="Cancel delete">${icon("plus")}</button>
+        <div>
+          <p class="section-kicker">Delete shelf</p>
+          <h2>${escapeHtml(shelf.name)}</h2>
+          <p>This will delete only this custom shelf. Books will stay in your library and reading shelves.</p>
+        </div>
+        <div class="feedback-prompt-actions">
+          <button class="button" type="button" data-remove-shelf-cancel>Cancel</button>
+          <button class="button button-fill remove-confirm-button" type="button" data-remove-shelf-confirm="${escapeHtml(shelf.id)}">Delete</button>
         </div>
       </div>
     </section>
@@ -1576,7 +1600,12 @@ function renderCustomShelfPage(shelfId) {
         <div>
           <h2>${escapeHtml(shelf.name)}</h2>
         </div>
-        <span>${shelfBooks.length} ${shelfBooks.length === 1 ? "book" : "books"}</span>
+        <div class="custom-shelf-hero-actions">
+          <span>${shelfBooks.length} ${shelfBooks.length === 1 ? "book" : "books"}</span>
+          <button class="button custom-shelf-delete" type="button" data-remove-shelf-prompt="${escapeHtml(shelf.id)}" aria-label="Delete shelf">
+            ${icon("trash")}
+          </button>
+        </div>
       </section>
       <section class="bookcase-grid" aria-label="${escapeHtml(shelf.name)} books">
         ${shelfBooks.length ? shelfBooks.map((book) => `
@@ -1757,6 +1786,23 @@ function removeBookFromLibrary(title) {
   }));
   syncSearchBookStatus(book, "");
   state.removeBookPrompt = "";
+  persistLocalData();
+}
+
+function removeCustomShelf(id) {
+  const shelfExists = customShelves.some((shelf) => shelf.id === id);
+  if (!shelfExists) return;
+
+  customShelves = customShelves.filter((shelf) => shelf.id !== id);
+  if (state.detailPage?.type === "customShelf" && state.detailPage.value === id) {
+    state.detailPage = null;
+    state.tab = "shelves";
+    state.shelfMode = "custom";
+  }
+  if (state.currentCustomShelf === id) {
+    state.currentCustomShelf = null;
+  }
+  state.removeShelfPrompt = "";
   persistLocalData();
 }
 
@@ -3485,6 +3531,27 @@ function bindEvents() {
   document.querySelectorAll("[data-remove-book-confirm]").forEach((button) => {
     button.addEventListener("click", () => {
       removeBookFromLibrary(button.dataset.removeBookConfirm);
+      render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-remove-shelf-prompt]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.removeShelfPrompt = button.dataset.removeShelfPrompt;
+      render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-remove-shelf-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.removeShelfPrompt = "";
+      render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-remove-shelf-confirm]").forEach((button) => {
+    button.addEventListener("click", () => {
+      removeCustomShelf(button.dataset.removeShelfConfirm);
       render({ preserveScroll: true });
     });
   });

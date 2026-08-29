@@ -2473,10 +2473,34 @@ h3 {
   font-size: 1.18rem;
 }
 
-.custom-shelf-hero > span {
+.custom-shelf-hero-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.custom-shelf-hero-actions > span {
   color: var(--muted);
   font-size: 0.76rem;
   white-space: nowrap;
+}
+
+.custom-shelf-delete {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(120, 36, 28, 0.16);
+  color: #f0a08f;
+  border: 0.5px solid rgba(240, 160, 143, 0.24);
+}
+
+.custom-shelf-delete svg {
+  width: 0.92rem;
+  height: 0.92rem;
 }
 
 .bookcase-grid {
