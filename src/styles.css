@@ -3003,7 +3003,8 @@ h3 {
 
 .phone-shell[data-app-theme="summer"] .hero-panel .progress i,
 .phone-shell[data-app-theme="summer"] .progress i {
-  background: var(--active-tint);
+  background: linear-gradient(90deg, #c07b1f, #5f8f3a) !important;
+  box-shadow: 0 0 0 1px rgba(73, 86, 31, 0.18);
 }
 
 .phone-shell[data-app-theme="summer"] .shelf-done {
