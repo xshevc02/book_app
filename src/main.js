@@ -65,6 +65,7 @@ const state = {
   editingFeedbackBook: "",
   removeBookPrompt: "",
   removeShelfPrompt: "",
+  editingShelfName: "",
   openFinishedDatePicker: "",
   finishedDatePickerMonth: "",
   calendarDemoSeeded: false,
@@ -1310,7 +1311,6 @@ function renderCurrentReadingCard() {
           <h2>${bookLink(book.title)}</h2>
           <p class="hero-author">${authorLink(book.author)}</p>
         </div>
-        ${displayBookNote(book) ? `<p>${escapeHtml(displayBookNote(book))}</p>` : ""}
       </div>
       ${readingBooks.length > 1 ? `
         <div class="current-reading-nav" aria-label="Current reading books">
@@ -1547,10 +1547,15 @@ function renderCustomShelves() {
       ` : ""}
       <div class="custom-shelf-list">
         ${customShelves.map((shelf) => `
-          <button class="custom-shelf-card" type="button" data-custom-shelf-open="${shelf.id}">
-            <span>${escapeHtml(shelf.name)}</span>
-            <small>${shelf.bookTitles.length} ${shelf.bookTitles.length === 1 ? "book" : "books"}</small>
-          </button>
+          <article class="custom-shelf-card">
+            <button class="custom-shelf-card-open" type="button" data-custom-shelf-open="${shelf.id}">
+              <span>${escapeHtml(shelf.name)}</span>
+              <small>${shelf.bookTitles.length} ${shelf.bookTitles.length === 1 ? "book" : "books"}</small>
+            </button>
+            <button class="button custom-shelf-icon-button custom-shelf-delete" type="button" data-remove-shelf-prompt="${escapeHtml(shelf.id)}" aria-label="Delete shelf">
+              ${icon("trash")}
+            </button>
+          </article>
         `).join("")}
       </div>
     </section>
@@ -1597,12 +1602,24 @@ function renderCustomShelfPage(shelfId) {
         <span>My shelf</span>
       </div>
       <section class="custom-shelf-hero">
-        <div>
-          <h2>${escapeHtml(shelf.name)}</h2>
-        </div>
+        ${state.editingShelfName === shelf.id ? `
+          <form class="custom-shelf-name-form" data-rename-shelf-form="${escapeHtml(shelf.id)}">
+            <input name="name" type="text" value="${escapeHtml(shelf.name)}" aria-label="Shelf name" autocomplete="off" required autofocus>
+            <div class="custom-shelf-name-actions">
+              <button class="button custom-shelf-icon-button custom-shelf-save" type="submit" aria-label="Save shelf name">${icon("check")}</button>
+              <button class="button custom-shelf-icon-button" type="button" data-rename-shelf-cancel aria-label="Cancel rename">${icon("plus")}</button>
+            </div>
+          </form>
+        ` : `
+          <div class="custom-shelf-title-row">
+            <h2>${escapeHtml(shelf.name)}</h2>
+            <button class="button custom-shelf-icon-button" type="button" data-rename-shelf-start="${escapeHtml(shelf.id)}" aria-label="Rename shelf">
+              ${icon("compose")}
+            </button>
+          </div>
+        `}
         <div class="custom-shelf-hero-actions">
-          <span>${shelfBooks.length} ${shelfBooks.length === 1 ? "book" : "books"}</span>
-          <button class="button custom-shelf-delete" type="button" data-remove-shelf-prompt="${escapeHtml(shelf.id)}" aria-label="Delete shelf">
+          <button class="button custom-shelf-icon-button custom-shelf-delete" type="button" data-remove-shelf-prompt="${escapeHtml(shelf.id)}" aria-label="Delete shelf">
             ${icon("trash")}
           </button>
         </div>
@@ -1806,6 +1823,23 @@ function removeCustomShelf(id) {
   persistLocalData();
 }
 
+function renameCustomShelf(id, name) {
+  const nextName = name.trim();
+  if (!nextName) return false;
+
+  let renamed = false;
+  customShelves = customShelves.map((shelf) => {
+    if (shelf.id !== id) return shelf;
+    renamed = true;
+    return { ...shelf, name: nextName };
+  });
+  if (!renamed) return false;
+
+  state.editingShelfName = "";
+  persistLocalData();
+  return true;
+}
+
 function enrichAndRender(book, options = {}) {
   const scrollTop = options.preserveScroll
     ? options.scrollTop ?? document.querySelector(".content")?.scrollTop ?? 0
@@ -1910,7 +1944,7 @@ function bookCardMeta(book) {
   const status = readingStatusLabel(book)
     .replace("In wishlist", "Wishlist")
     .replace("Not on your shelves yet", "Not added");
-  return `${status} · ${ratingLine(book)}`;
+  return status;
 }
 
 function updateBookPages(title, pages) {
@@ -3063,9 +3097,7 @@ function renderAuthorPage(author) {
         <span>Author</span>
       </div>
       <section class="author-hero">
-        <p class="section-kicker">Author</p>
         <h2>${escapeHtml(author)}</h2>
-        <p>${authorBooks.length} ${authorBooks.length === 1 ? "book" : "books"} we know about.</p>
       </section>
       <section class="library-list">
         ${authorBooks.map((book) => `
@@ -3553,6 +3585,29 @@ function bindEvents() {
     button.addEventListener("click", () => {
       removeCustomShelf(button.dataset.removeShelfConfirm);
       render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-rename-shelf-start]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingShelfName = button.dataset.renameShelfStart;
+      render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-rename-shelf-cancel]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.editingShelfName = "";
+      render({ preserveScroll: true });
+    });
+  });
+
+  document.querySelectorAll("[data-rename-shelf-form]").forEach((form) => {
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const data = new FormData(form);
+      const renamed = renameCustomShelf(form.dataset.renameShelfForm, `${data.get("name") || ""}`);
+      if (renamed) render({ preserveScroll: true });
     });
   });
 

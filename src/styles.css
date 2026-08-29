@@ -329,6 +329,13 @@ h3 {
   color: var(--ink);
 }
 
+.current-reading-card {
+  --current-cover-width: clamp(84px, 23vw, 112px);
+  --current-cover-gap: 18px;
+  height: clamp(224px, 29svh, 286px);
+  min-height: 224px;
+}
+
 .hero-panel::before {
   content: "";
   position: absolute;
@@ -382,6 +389,30 @@ h3 {
   right: 22px;
   bottom: 52px;
   transform: rotate(4deg);
+}
+
+.current-reading-card .book-cover.large {
+  width: var(--current-cover-width);
+  height: min(calc(var(--current-cover-width) / 0.68), calc(100% - 112px));
+  aspect-ratio: 0.68;
+  min-height: 0;
+  top: 58px;
+  bottom: auto;
+}
+
+.current-reading-card > div:first-child {
+  max-width: calc(100% - var(--current-cover-width) - var(--current-cover-gap));
+}
+
+.current-reading-card .hero-pages-input {
+  right: calc(22px + var(--current-cover-width) + var(--current-cover-gap));
+}
+
+.current-reading-card > div:first-child > p:not(.section-kicker):not(.hero-author) {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .progress-wrap {
@@ -1793,6 +1824,8 @@ h3 {
 }
 
 .author-hero {
+  display: grid;
+  gap: 7px;
   padding: 16px;
 }
 
@@ -2416,14 +2449,27 @@ h3 {
 .custom-shelf-card {
   min-width: 0;
   min-height: 54px;
-  display: grid;
-  align-content: space-between;
-  gap: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 11px;
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.07);
   border: 0.5px solid rgba(255, 232, 190, 0.1);
   color: var(--ink);
+  text-align: left;
+}
+
+.custom-shelf-card-open {
+  min-width: 0;
+  min-height: 32px;
+  display: grid;
+  align-content: space-between;
+  flex: 1 1 auto;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
   text-align: left;
 }
 
@@ -2433,14 +2479,14 @@ h3 {
   color: var(--active-tint);
 }
 
-.custom-shelf-card span,
-.custom-shelf-card small {
+.custom-shelf-card-open span,
+.custom-shelf-card-open small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.custom-shelf-card small {
+.custom-shelf-card-open small {
   color: var(--muted);
   font-size: 0.7rem;
 }
@@ -2473,6 +2519,44 @@ h3 {
   font-size: 1.18rem;
 }
 
+.custom-shelf-title-row,
+.custom-shelf-name-form {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.custom-shelf-title-row h2 {
+  min-width: 0;
+}
+
+.custom-shelf-name-form input {
+  min-width: 0;
+  width: min(320px, 100%);
+  height: 36px;
+  padding: 0 12px;
+  border: 0.5px solid var(--hairline);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font: inherit;
+  outline: 0;
+}
+
+.custom-shelf-name-form input:focus {
+  border-color: var(--active-tint);
+  box-shadow: 0 0 0 3px rgba(241, 199, 99, 0.12);
+}
+
+.custom-shelf-name-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
 .custom-shelf-hero-actions {
   display: inline-flex;
   align-items: center;
@@ -2486,6 +2570,7 @@ h3 {
   white-space: nowrap;
 }
 
+.custom-shelf-icon-button,
 .custom-shelf-delete {
   width: 30px;
   height: 30px;
@@ -2493,11 +2578,30 @@ h3 {
   place-items: center;
   padding: 0;
   border-radius: 999px;
-  background: rgba(120, 36, 28, 0.16);
-  color: #f0a08f;
-  border: 0.5px solid rgba(240, 160, 143, 0.24);
 }
 
+.custom-shelf-icon-button {
+  background: transparent;
+  color: var(--ink);
+  border: 0;
+}
+
+.custom-shelf-save {
+  background: rgba(95, 126, 36, 0.2);
+  color: var(--active-tint);
+}
+
+.custom-shelf-name-actions .custom-shelf-icon-button:last-child svg {
+  transform: rotate(45deg);
+}
+
+.custom-shelf-delete {
+  background: transparent;
+  color: #f0a08f;
+  border: 0;
+}
+
+.custom-shelf-icon-button svg,
 .custom-shelf-delete svg {
   width: 0.92rem;
   height: 0.92rem;
@@ -3003,8 +3107,8 @@ h3 {
 
 .phone-shell[data-app-theme="summer"] .hero-panel .progress i,
 .phone-shell[data-app-theme="summer"] .progress i {
-  background: linear-gradient(90deg, #c07b1f, #5f8f3a) !important;
-  box-shadow: 0 0 0 1px rgba(73, 86, 31, 0.18);
+  background: #6f9f3f !important;
+  box-shadow: 0 0 0 1px rgba(52, 81, 28, 0.16);
 }
 
 .phone-shell[data-app-theme="summer"] .shelf-done {
@@ -3471,8 +3575,10 @@ h3 {
   }
 
   .content-home .current-reading-card {
-    min-height: 286px;
-    max-height: 306px;
+    --current-cover-width: clamp(98px, 16vw, 124px);
+    --current-cover-gap: 34px;
+    height: clamp(236px, 28svh, 306px);
+    min-height: 236px;
   }
 
   .content-home .home-book-section {
@@ -3494,16 +3600,21 @@ h3 {
     top: 22px;
   }
 
-  .content-home .current-reading-card .hero-pages-input,
-  .content-home .current-reading-card .progress-wrap {
-    right: 214px;
+  .content-home .current-reading-card .hero-pages-input {
+    right: calc(44px + var(--current-cover-width) + var(--current-cover-gap));
   }
 
-  .hero-panel .book-cover.large {
-    width: 124px;
-    min-height: 182px;
+  .content-home .current-reading-card .progress-wrap {
     right: 44px;
-    top: 66px;
+  }
+
+  .content-home .current-reading-card .book-cover.large {
+    width: var(--current-cover-width);
+    height: min(calc(var(--current-cover-width) / 0.68), calc(100% - 122px));
+    aspect-ratio: 0.68;
+    min-height: 0;
+    right: 44px;
+    top: 64px;
     bottom: auto;
   }
 
