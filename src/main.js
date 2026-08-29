@@ -1512,9 +1512,12 @@ function renderShelfLibrary() {
 
     <section class="library-list">
       ${visibleBooks.length ? visibleBooks.map((book) => `
-        <article class="library-item">
-          ${bookCover(book)}
-          <div>
+        <article class="library-item library-book-card">
+          <div class="mini-cover-wrap">
+            ${bookCover(book)}
+            ${renderCoverRatingBadge(book)}
+          </div>
+          <div class="library-item-body">
             <h3>${bookLink(book.title)}</h3>
             <p>${authorLink(book.author)}</p>
             ${renderShelfProgress(book)}
@@ -1526,8 +1529,13 @@ function renderShelfLibrary() {
   `;
 }
 
-function renderShelfBookActions(book) {
-  return renderBookStatusControl(book, "shelf-status", { canRemove: true });
+function renderShelfBookActions(book, options = {}) {
+  const canRemove = options.canRemove ?? true;
+  return `
+    <div class="library-item-actions">
+      ${renderBookStatusControl(book, "shelf-status", { canRemove })}
+    </div>
+  `;
 }
 
 function renderCustomShelves() {
@@ -1645,15 +1653,10 @@ function renderShelfProgress(book) {
   if (book.status === "Reading") {
     return `
       <div class="progress compact"><i style="${progressStyle(bookProgress(book))}"></i></div>
-      ${renderInlineRatingBadge(book)}
     `;
   }
 
-  if (book.status === "Finished") {
-    return renderInlineRatingBadge(book);
-  }
-
-  return renderInlineRatingBadge(book);
+  return "";
 }
 
 function readingStatusLabel(book) {
@@ -3101,14 +3104,17 @@ function renderAuthorPage(author) {
       </section>
       <section class="library-list">
         ${authorBooks.map((book) => `
-          <article class="library-item">
-            ${bookCover(book)}
-            <div>
+          <article class="library-item library-book-card">
+            <div class="mini-cover-wrap">
+              ${bookCover(book)}
+              ${renderCoverRatingBadge(book)}
+            </div>
+            <div class="library-item-body">
               <h3>${bookLink(book.title)}</h3>
-              <p>${bookCardMeta(book)}</p>
+              <p>${authorLink(book.author)}</p>
               ${renderShelfProgress(book)}
             </div>
-            ${renderBookStatusControl(book, "shelf-status")}
+            ${renderShelfBookActions(book, { canRemove: false })}
           </article>
         `).join("")}
       </section>

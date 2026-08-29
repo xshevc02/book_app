@@ -2673,12 +2673,17 @@ h3 {
   gap: 10px;
 }
 
+.library-list:has(.library-book-card) {
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  align-items: stretch;
+}
+
 .library-item {
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: 56px 1fr auto;
-  align-items: center;
+  align-items: stretch;
   gap: 12px;
   padding: 10px;
   border-radius: 18px;
@@ -2692,6 +2697,13 @@ h3 {
 
 .library-item .book-cover {
   min-height: 82px;
+}
+
+.library-item-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
 }
 
 .library-item h3,
@@ -2720,6 +2732,71 @@ h3 {
   line-height: 1;
 }
 
+.library-item-actions {
+  display: grid;
+  justify-items: stretch;
+  align-content: end;
+  gap: 8px;
+}
+
+.library-item-actions .inline-rating-badge {
+  margin-top: 0;
+}
+
+.library-book-card {
+  grid-template-columns: 1fr;
+  align-items: stretch;
+  grid-template-rows: auto minmax(52px, auto) auto;
+  gap: 7px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.library-book-card .book-cover {
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 0.68;
+}
+
+.library-book-card .library-item-body {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+
+.library-book-card h3 {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.86rem;
+  line-height: 1.15;
+}
+
+.library-book-card p {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.library-book-card .progress.compact {
+  width: 100%;
+  max-width: none;
+  margin-top: 6px;
+}
+
+.library-book-card .library-item-actions {
+  width: 100%;
+}
+
+.library-book-card .book-status-control.shelf-status {
+  width: 100%;
+  min-width: 0;
+}
+
 .inline-rating-badge svg {
   width: 0.76rem;
   height: 0.76rem;
@@ -2742,8 +2819,10 @@ h3 {
 }
 
 .progress.compact {
+  width: 100%;
   max-width: 130px;
-  margin-top: 10px;
+  flex: 0 0 8px;
+  margin-top: auto;
 }
 
 .shelf-done {
@@ -3751,12 +3830,17 @@ h3 {
   }
 
   .content-shelves .library-list {
-    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
     align-items: stretch;
   }
 
   .content-shelves .library-item {
-    min-height: 118px;
+    min-height: 0;
+  }
+
+  .content-detail .author-detail-page .library-list {
+    grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+    align-items: stretch;
   }
 
   .custom-shelf-list {
@@ -3882,7 +3966,7 @@ h3 {
   }
 
   .content-detail .author-detail-page .library-list {
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
   }
 
   .content-detail .custom-shelf-page {
@@ -3962,6 +4046,10 @@ h3 {
 
   .library-item {
     grid-template-columns: 50px 1fr;
+  }
+
+  .library-book-card {
+    grid-template-columns: 1fr;
   }
 
   .library-item > span {
