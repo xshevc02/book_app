@@ -38,6 +38,8 @@ const state = {
   composeBookSelected: false,
   openStatusMenu: "",
   openStatusMenuDirection: "down",
+  openStatusMenuRect: null,
+  openStatusMenuCanRemove: false,
   feedQuery: "",
   feedSearchText: "",
   feedFilter: "all",
@@ -923,6 +925,7 @@ function render(options = {}) {
         ${state.feedbackPromptBook ? renderFeedbackPrompt() : ""}
         ${state.removeBookPrompt ? renderRemoveBookPrompt() : ""}
         ${renderNav()}
+        ${renderStatusMenuOverlay()}
       </section>
     </main>
   `;
@@ -2643,38 +2646,66 @@ function renderBookStatusControl(book, className = "", options = {}) {
       <button type="button" data-book-status-quick="${escapeHtml(book.title)}" data-book-status-key="${escapeHtml(menuKey)}" data-book-status-value="${value || "Wishlist"}">
         ${label}
       </button>
-      <button class="book-status-arrow" type="button" data-book-status-menu="${escapeHtml(menuKey)}" aria-label="Change reading status">
+      <button class="book-status-arrow" type="button" data-book-status-menu="${escapeHtml(menuKey)}" data-book-status-can-remove="${options.canRemove ? "true" : "false"}" aria-label="Change reading status">
         <span aria-hidden="true"></span>
       </button>
-      ${menuOpen ? `
-        <div class="book-status-menu" role="menu">
-          ${readingStatuses.map((status) => `
-            <button type="button" role="menuitem" data-book-status-choice="${escapeHtml(book.title)}" data-book-status-key="${escapeHtml(menuKey)}" data-book-status-value="${status}">
-              ${status === "Reading" ? "Reading now" : status}
-            </button>
-          `).join("")}
-          ${options.canRemove ? `
-            <span class="book-status-separator" aria-hidden="true"></span>
-            <button class="book-status-delete" type="button" role="menuitem" data-remove-book-prompt="${escapeHtml(book.title)}">
-              Delete
-            </button>
-          ` : ""}
-        </div>
-      ` : ""}
     </div>
   `;
 }
 
-function statusMenuDirection(button) {
+function renderStatusMenuOverlay() {
+  if (!state.openStatusMenu || !state.openStatusMenuRect) return "";
+
+  const book = findBookByStatusMenuKey(state.openStatusMenu);
+  if (!book) return "";
+
+  const { left, top, width } = state.openStatusMenuRect;
+  const menuDirection = state.openStatusMenuDirection === "up" ? "menu-up" : "";
+
+  return `
+    <div class="book-status-menu book-status-menu-overlay ${menuDirection}" role="menu" style="--menu-left:${left}px; --menu-top:${top}px; --menu-width:${width}px;">
+      ${renderBookStatusMenuItems(book, state.openStatusMenu, state.openStatusMenuCanRemove)}
+    </div>
+  `;
+}
+
+function renderBookStatusMenuItems(book, menuKey, canRemove = false) {
+  return `
+    ${readingStatuses.map((status) => `
+      <button type="button" role="menuitem" data-book-status-choice="${escapeHtml(book.title)}" data-book-status-key="${escapeHtml(menuKey)}" data-book-status-value="${status}">
+        ${status === "Reading" ? "Reading now" : status}
+      </button>
+    `).join("")}
+    ${canRemove ? `
+      <span class="book-status-separator" aria-hidden="true"></span>
+      <button class="book-status-delete" type="button" role="menuitem" data-remove-book-prompt="${escapeHtml(book.title)}">
+        Delete
+      </button>
+    ` : ""}
+  `;
+}
+
+function statusMenuPlacement(button) {
   const control = button.closest(".book-status-control");
   const rect = control?.getBoundingClientRect();
-  if (!rect) return "down";
-  const tabBarTop = document.querySelector(".tab-bar")?.getBoundingClientRect().top;
+  if (!rect) return { direction: "down", rect: null };
+  const tabBarTop = document.querySelector(".bottom-nav")?.getBoundingClientRect().top;
   const screenBottom = document.querySelector(".app-screen")?.getBoundingClientRect().bottom;
-  const lowerBoundary = Math.min(tabBarTop || Infinity, screenBottom || Infinity, window.innerHeight) - 8;
+  const lowerBoundary = Math.min(tabBarTop || Infinity, screenBottom || Infinity, window.innerHeight) - 10;
   const spaceBelow = lowerBoundary - rect.bottom;
   const spaceAbove = rect.top - 8;
-  return spaceBelow < 156 && spaceAbove > spaceBelow ? "up" : "down";
+  const direction = spaceBelow < 156 && spaceAbove > spaceBelow ? "up" : "down";
+  const width = Math.max(148, rect.width);
+  const left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8));
+
+  return {
+    direction,
+    rect: {
+      left: Math.round(left),
+      top: Math.round(direction === "up" ? rect.top : rect.bottom + 7),
+      width: Math.round(width)
+    }
+  };
 }
 
 function bookStatusMenuKey(book) {
@@ -2682,6 +2713,11 @@ function bookStatusMenuKey(book) {
     || book.openLibraryKey
     || book.isbn
     || book.title;
+}
+
+function findBookByStatusMenuKey(key) {
+  const lists = [books, state.remoteBookResults, state.composeBookResults, homeDiscoveryBooks()];
+  return lists.flat().find((book) => bookStatusMenuKey(book) === key);
 }
 
 function remoteSearchLabel(count) {
@@ -2975,7 +3011,7 @@ function renderAuthorPage(author) {
   const authorBooks = books.filter((book) => book.author === author);
 
   return `
-    <section class="detail-page">
+    <section class="detail-page author-detail-page">
       <div class="detail-header">
         <button class="button back-button" type="button" data-detail-back aria-label="Back">${icon("back")}</button>
         <span>Author</span>
@@ -3338,9 +3374,11 @@ function bindEvents() {
   }
 
   app.onclick = (event) => {
-    if (!state.openStatusMenu || event.target.closest(".book-status-control")) return;
+    if (!state.openStatusMenu || event.target.closest(".book-status-control, .book-status-menu-overlay")) return;
     state.openStatusMenu = "";
     state.openStatusMenuDirection = "down";
+    state.openStatusMenuRect = null;
+    state.openStatusMenuCanRemove = false;
     render({ preserveScroll: true });
   };
 
@@ -3390,6 +3428,8 @@ function bindEvents() {
       );
       state.openStatusMenu = "";
       state.openStatusMenuDirection = "down";
+      state.openStatusMenuRect = null;
+      state.openStatusMenuCanRemove = false;
       if (book) enrichAndRender(book, { preserveScroll: true, scrollTop });
       render({ preserveScroll: true, scrollTop });
     });
@@ -3398,8 +3438,11 @@ function bindEvents() {
   document.querySelectorAll("[data-book-status-menu]").forEach((button) => {
     button.addEventListener("click", () => {
       const isClosing = state.openStatusMenu === button.dataset.bookStatusMenu;
+      const placement = statusMenuPlacement(button);
       state.openStatusMenu = isClosing ? "" : button.dataset.bookStatusMenu;
-      state.openStatusMenuDirection = isClosing ? "down" : statusMenuDirection(button);
+      state.openStatusMenuDirection = isClosing ? "down" : placement.direction;
+      state.openStatusMenuRect = isClosing ? null : placement.rect;
+      state.openStatusMenuCanRemove = !isClosing && button.dataset.bookStatusCanRemove === "true";
       render({ preserveScroll: true });
     });
   });
@@ -3414,6 +3457,8 @@ function bindEvents() {
       );
       state.openStatusMenu = "";
       state.openStatusMenuDirection = "down";
+      state.openStatusMenuRect = null;
+      state.openStatusMenuCanRemove = false;
       if (book) enrichAndRender(book, { preserveScroll: true, scrollTop });
       render({ preserveScroll: true, scrollTop });
     });
@@ -3423,6 +3468,8 @@ function bindEvents() {
     button.addEventListener("click", () => {
       state.openStatusMenu = "";
       state.openStatusMenuDirection = "down";
+      state.openStatusMenuRect = null;
+      state.openStatusMenuCanRemove = false;
       state.removeBookPrompt = button.dataset.removeBookPrompt;
       render({ preserveScroll: true });
     });

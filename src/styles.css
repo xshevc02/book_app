@@ -1120,6 +1120,22 @@ h3 {
   z-index: 120;
 }
 
+.book-status-menu-overlay {
+  position: fixed;
+  left: var(--menu-left);
+  top: var(--menu-top);
+  right: auto;
+  width: var(--menu-width);
+  min-width: 148px;
+  z-index: 500;
+}
+
+.book-status-menu-overlay.menu-up {
+  top: var(--menu-top);
+  bottom: auto;
+  transform: translateY(calc(-100% - 7px));
+}
+
 .book-status-control.menu-up .book-status-menu {
   top: auto;
   bottom: calc(100% + 7px);
@@ -3717,6 +3733,20 @@ h3 {
 
   .content-detail .library-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .content-detail .author-detail-page {
+    grid-template-columns: 1fr;
+  }
+
+  .content-detail .author-detail-page .detail-header,
+  .content-detail .author-detail-page .author-hero,
+  .content-detail .author-detail-page .library-list {
+    grid-column: 1;
+  }
+
+  .content-detail .author-detail-page .library-list {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 
   .content-detail .custom-shelf-page {
